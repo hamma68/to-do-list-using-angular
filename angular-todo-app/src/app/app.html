@@ -1,0 +1,150 @@
+<main class="shell">
+  <header class="head">
+    <h1>To-Do List</h1>
+    <p class="sub">Angular 22 · Express API · JSON file storage</p>
+  </header>
+
+  <!-- Add form -->
+  <form class="card add" [formGroup]="form" (ngSubmit)="add()" novalidate>
+    <div class="field grow">
+      <label for="title">New task</label>
+      <input
+        id="title"
+        type="text"
+        formControlName="title"
+        placeholder="What needs to be done?"
+        autocomplete="off"
+        [class.invalid]="showError(form.controls.title)"
+      />
+      <div class="hint-row">
+        @if (showError(form.controls.title)) {
+          <small class="error">{{ message(form.controls.title) }}</small>
+        } @else {
+          <small class="hint">3–{{ TITLE_MAX }} characters</small>
+        }
+        <small class="hint">{{ trimmedLength(form.controls.title.value) }}/{{ TITLE_MAX }}</small>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="priority">Priority</label>
+      <select id="priority" formControlName="priority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="dueDate">Due date</label>
+      <input
+        id="dueDate"
+        type="date"
+        formControlName="dueDate"
+        [attr.min]="today"
+        [class.invalid]="showError(form.controls.dueDate)"
+      />
+      @if (showError(form.controls.dueDate)) {
+        <small class="error">{{ message(form.controls.dueDate) }}</small>
+      }
+    </div>
+
+    <button class="btn primary" type="submit" [disabled]="saving()">
+      {{ saving() ? 'Adding…' : 'Add task' }}
+    </button>
+  </form>
+
+  @if (error(); as msg) {
+    <div class="banner" role="alert">
+      <span>{{ msg }}</span>
+      <button class="btn small" type="button" (click)="load()">Retry</button>
+    </div>
+  }
+
+  <!-- List -->
+  <section class="card list">
+    <div class="toolbar">
+      <div class="tabs" role="tablist">
+        @for (f of filters; track f) {
+          <button
+            type="button"
+            role="tab"
+            class="tab"
+            [class.active]="filter() === f"
+            [attr.aria-selected]="filter() === f"
+            (click)="filter.set(f)"
+          >
+            {{ f }}
+          </button>
+        }
+      </div>
+      <span class="count">{{ remaining() }} left</span>
+    </div>
+
+    @if (loading()) {
+      <p class="empty">Loading…</p>
+    } @else if (visibleTodos().length === 0) {
+      <p class="empty">
+        {{ todos().length === 0 ? 'No tasks yet — add your first one above.' : 'Nothing to show for this filter.' }}
+      </p>
+    } @else {
+      <ul>
+        @for (todo of visibleTodos(); track todo.id) {
+          <li [class.done]="todo.completed">
+            <input
+              class="check"
+              type="checkbox"
+              [checked]="todo.completed"
+              [attr.aria-label]="'Toggle ' + todo.title"
+              (change)="toggle(todo)"
+            />
+
+            @if (editingId() === todo.id) {
+              <div class="edit">
+                <input
+                  type="text"
+                  [formControl]="editControl"
+                  [class.invalid]="showError(editControl)"
+                  (keydown.enter)="saveEdit(todo)"
+                  (keydown.escape)="cancelEdit()"
+                  aria-label="Edit task title"
+                />
+                @if (showError(editControl)) {
+                  <small class="error">{{ message(editControl) }}</small>
+                }
+              </div>
+              <div class="actions">
+                <button class="btn small primary" type="button" (click)="saveEdit(todo)">Save</button>
+                <button class="btn small" type="button" (click)="cancelEdit()">Cancel</button>
+              </div>
+            } @else {
+              <div class="body">
+                <span class="title">{{ todo.title }}</span>
+                <span class="meta">
+                  <span class="chip" [class.low]="todo.priority === 'low'" [class.medium]="todo.priority === 'medium'" [class.high]="todo.priority === 'high'">{{ todo.priority }}</span>
+                  @if (todo.dueDate) {
+                    <span class="due" [class.overdue]="isOverdue(todo)">
+                      {{ isOverdue(todo) ? 'Overdue · ' : 'Due ' }}{{ todo.dueDate | date: 'mediumDate' }}
+                    </span>
+                  }
+                </span>
+              </div>
+              <div class="actions">
+                <button class="btn small" type="button" (click)="startEdit(todo)">Edit</button>
+                <button class="btn small danger" type="button" (click)="remove(todo)">Delete</button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (completedCount() > 0) {
+      <div class="foot">
+        <button class="btn small" type="button" (click)="clearCompleted()">
+          Clear completed ({{ completedCount() }})
+        </button>
+      </div>
+    }
+  </section>
+</main>
