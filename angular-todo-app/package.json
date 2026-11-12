@@ -23,6 +23,6 @@
     "@angular/cli": "^22.0.0",
     "@angular/compiler-cli": "^22.0.0",
     "concurrently": "^9.1.2",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0"
   }
 }
